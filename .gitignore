@@ -1,0 +1,21 @@
+# Kompilerade filer
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+
+# Build directories
+build/
+dist/
+
+# VS Code filer
+.vscode/
+
+# Backup filer
+*~
+*.bak
+
+# OS specifika filer
+.DS_Store
+Thumbs.db
