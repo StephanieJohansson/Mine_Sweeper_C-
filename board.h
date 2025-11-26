@@ -24,6 +24,7 @@ public:
     bool playerHitMine() const;
     bool playerHasWon() const;
 
+    // Print the board to an output stream
     void print(std::ostream& os) const;
 
         // To save to file and load from file
@@ -42,6 +43,7 @@ private: // Board dimensions and mine count
         int mineCount;
         bool hitMine = false;
 
+        // vector of vector of Cells representing the grid
         std::vector<std::vector<Cell>> grid;
 
         // Helper functions

@@ -13,9 +13,14 @@ public:
 
 private:
     std::unique_ptr<Board> board;
- // Handles player input commands
+    
+    // Handles player input commands
     void handleCommand(const std::string& input);
-    std::pair<int, int> parseCoordinates(const std::string& input);
+    
+    // VG functions for save/load
+    void saveGame();
+    bool showMainMenu();
+    bool loadGameMenu();
 };
 
 #endif

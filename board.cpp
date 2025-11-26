@@ -2,6 +2,7 @@
 #include <iostream>
 #include <random>
 #include <fstream>
+#include <stdexcept>
 
 // Constructor to initialize the board with given dimensions and mine count
 
@@ -207,12 +208,98 @@ void Board::print(std::ostream& os) const {
     }
 }
 
-// Placeholder for save/load - will implement later
+// Save the board state to a file
 void Board::saveToFile(const std::string& filename) const {
-    // Implement later
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file for writing: " + filename);
+    }
+    
+    // Save the board dimensions and mine count
+    file << rows << " " << cols << " " << mineCount << std::endl;
+    
+    // Save whether the player has hit a mine
+    file << (hitMine ? 1 : 0) << std::endl;
+    
+    // Save each cell on the board
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            const Cell& cell = grid[r][c];
+            file << (cell.HasMine ? 1 : 0) << " "
+                 << (cell.IsRevealed ? 1 : 0) << " "
+                 << (cell.IsFlagged ? 1 : 0) << " "
+                 << cell.AdjacentMines << std::endl;
+        }
+    }
+    
+    file.close();
 }
 
 std::unique_ptr<Board> Board::loadFromFile(const std::string& filename) {
-    // Implement later
-    return nullptr;
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file for reading: " + filename);
+    }
+    
+// this was a problematic part, because it was a weak check that could lead to
+// undetected errors later on:
+// file >> rows >> cols >> mineCount;
+// if (file.fail()) //
+
+    // Read board dimensions and mine count
+    int rows, cols, mineCount;
+    if (!(file >> rows >> cols >> mineCount)) {
+        throw std::runtime_error("Could not read board dimensions from file");
+    }
+    
+    if (rows <= 0 || cols <= 0 || mineCount < 0 || rows > 50 || cols > 50) {
+        throw std::runtime_error("Invalid board dimensions in save file");
+    }
+    
+    // Read hitMine status
+    int hitMineFlag;
+    if (!(file >> hitMineFlag)) {
+        throw std::runtime_error("Could not read game state from file");
+    }
+    
+    // Create a new Board object and manually set its values
+    auto board = std::make_unique<Board>(rows, cols, 0); // Create with 0 mines initially
+    
+    // Override the generated state with loaded state
+    board->mineCount = mineCount;
+    board->hitMine = (hitMineFlag == 1);
+    
+    // Clear and resize grid
+    board->grid.clear();
+    board->grid.resize(rows);
+    for (int r = 0; r < rows; r++) {
+        board->grid[r].resize(cols);
+    }
+    
+    // Read each cell's data with better error checking
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            int hasMine, isRevealed, isFlagged, adjacentMines;
+            
+            if (!(file >> hasMine >> isRevealed >> isFlagged >> adjacentMines)) {
+                throw std::runtime_error("Corrupted save file data at cell (" + 
+                                       std::to_string(r) + "," + std::to_string(c) + ")");
+            }
+            
+            // Validate data ranges
+            if (hasMine < 0 || hasMine > 1 || isRevealed < 0 || isRevealed > 1 || 
+                isFlagged < 0 || isFlagged > 1 || adjacentMines < 0 || adjacentMines > 8) {
+                throw std::runtime_error("Invalid cell data in save file");
+            }
+            
+            Cell& cell = board->grid[r][c];
+            cell.HasMine = (hasMine == 1);
+            cell.IsRevealed = (isRevealed == 1);
+            cell.IsFlagged = (isFlagged == 1);
+            cell.AdjacentMines = adjacentMines;
+        }
+    }
+    
+    file.close();
+    return board;
 }
